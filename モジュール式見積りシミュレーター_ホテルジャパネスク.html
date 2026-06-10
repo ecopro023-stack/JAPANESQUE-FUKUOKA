@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>清掃・環境整備 モジュール式見積りシミュレーター｜株式会社えこぷろ</title>
+<style>
+  :root {
+    --navy: #1f3a5f;
+    --navy-light: #eef3f8;
+    --gold: #cc9900;
+    --gold-light: #fff8e6;
+    --red: #c0392b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Meiryo", "Yu Gothic", sans-serif;
+    color: #222;
+    background: #f6f7f9;
+    margin: 0;
+    padding: 0 0 60px 0;
+  }
+  header {
+    background: var(--navy);
+    color: #fff;
+    padding: 18px 16px;
+    text-align: center;
+  }
+  header .company { font-size: 12px; opacity: 0.85; margin-bottom: 2px; }
+  header h1 { margin: 0; font-size: 20px; }
+  header .sub { font-size: 12px; opacity: 0.85; margin-top: 4px; }
+
+  .container {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  .intro {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+  .intro b { color: var(--navy); }
+
+  .section-title {
+    font-size: 15px;
+    font-weight: bold;
+    color: var(--navy);
+    border-left: 5px solid var(--navy);
+    padding-left: 8px;
+    margin: 22px 0 10px 0;
+  }
+
+  .base-card {
+    background: var(--navy-light);
+    border: 1px solid var(--navy);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13.5px;
+    line-height: 1.7;
+  }
+  .base-card .badge {
+    display: inline-block;
+    background: var(--navy);
+    color: #fff;
+    font-size: 11px;
+    border-radius: 10px;
+    padding: 2px 10px;
+    margin-bottom: 6px;
+  }
+  .base-card ul { margin: 6px 0 0 18px; padding: 0; }
+
+  .benefit-box {
+    background: #f4f4f4;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    transition: background .2s, border-color .2s;
+  }
+  .benefit-box ul { margin: 8px 0 0 18px; padding: 0; color: #888; }
+  .benefit-box .benefit-status {
+    font-weight: bold;
+    color: #888;
+  }
+  .benefit-box.active {
+    background: var(--gold-light);
+    border-color: var(--gold);
+  }
+  .benefit-box.active ul { color: #222; }
+  .benefit-box.active .benefit-status { color: var(--gold); }
+
+  .module {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .module:hover { border-color: var(--navy); }
+  .module.checked {
+    border-color: var(--gold);
+    background: var(--gold-light);
+    box-shadow: 0 0 0 1px var(--gold);
+  }
+  .module input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-top: 3px;
+    accent-color: var(--navy);
+    flex-shrink: 0;
+  }
+  .module .body { flex: 1; }
+  .module .title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .module .name { font-weight: bold; font-size: 14px; }
+  .module .price { font-weight: bold; color: var(--navy); font-size: 14px; white-space: nowrap; }
+  .module .price small { font-size: 11px; font-weight: normal; color: #555; }
+  .module .desc { font-size: 12.5px; color: #555; margin-top: 4px; line-height: 1.6; }
+
+  /* サマリーバー */
+  .summary {
+    position: sticky;
+    bottom: 0;
+    left: 0; right: 0;
+    background: var(--navy);
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 10px 10px 0 0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+    margin-top: 20px;
+  }
+  .summary-inner {
+    max-width: 920px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .summary .plan-name {
+    font-size: 12px;
+    background: var(--gold);
+    color: #fff;
+    border-radius: 10px;
+    padding: 2px 12px;
+    display: inline-block;
+    margin-bottom: 4px;
+  }
+  .summary .label { font-size: 12px; opacity: 0.85; }
+  .summary .amount { font-size: 26px; font-weight: bold; }
+  .summary .amount small { font-size: 13px; font-weight: normal; }
+  .summary .annual { font-size: 12px; opacity: 0.9; margin-top: 2px; }
+  .summary .onetime { font-size: 12px; opacity: 0.9; margin-top: 2px; }
+
+  .note {
+    font-size: 11.5px;
+    color: #777;
+    margin-top: 24px;
+    line-height: 1.8;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+  }
+  .footer-co {
+    text-align: center;
+    font-size: 12px;
+    color: #555;
+    margin-top: 16px;
+  }
+
+  .group-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #888;
+    margin: 14px 0 6px 2px;
+  }
+
+  .room-count-box {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13.5px;
+    flex-wrap: wrap;
+  }
+  .room-count-box label { font-weight: bold; color: var(--navy); }
+  .room-count-box input[type="number"] {
+    width: 80px;
+    padding: 4px 6px;
+    font-size: 14px;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+  }
+  .room-count-box .hint { font-size: 11.5px; color: #888; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="company">株式会社えこぷろ</div>
+  <h1>清掃・環境整備　モジュール式見積りシミュレーター</h1>
+  <div class="sub">年間定期サブスクリプションプラン（税抜価格）</div>
+</header>
+
+<div class="container">
+
+  <div class="intro">
+    必要な項目をチェックするだけで、<b>毎月の定額料金（月額）</b>が自動計算されます。
+    壁掛けエアコン・天井カセットエアコン・週1巡回清掃は全プラン共通の<b>ライトプラン</b>として標準で含まれます。
+    オプションを追加していくと<b>スタンダードプラン</b>・<b>フルパッケージ</b>・貴社専用の<b>カスタムプラン</b>として概算金額が確認できます。
+    ※本シミュレーターは概算見積りです。正式な金額は現地確認後にご提示いたします。
+  </div>
+
+  <div class="section-title">ライトプラン（標準搭載）</div>
+  <div class="base-card">
+    <span class="badge">ライトプラン　月額 145,500円（税抜）</span>
+    <ul>
+      <li>壁掛けエアコン内部クリーニング　客室120台を毎月10台ずつ計画ローテーション施工（単価9,000円×10台＝90,000円／月）</li>
+      <li>天井カセットエアコン内部クリーニング　共用部7台・年1回（単価18,000円×7台を月割＝10,500円／月）</li>
+      <li>週1巡回清掃　毎週清掃＋隔週強化清掃＋月1回写真報告書提出（45,000円／月）</li>
+    </ul>
+  </div>
+
+  <div class="section-title">4大無料特典（スタンダードプラン以上で適用）</div>
+  <div class="benefit-box" id="benefitBox">
+    <div class="benefit-status" id="benefitStatus">下記「共用部床面　定期機械洗浄」「客室バスルーム　カビ・ぬめり定期除去」を選択するとスタンダードプラン相当となり、以下が無料になります</div>
+    <ul>
+      <li>客室バルコニー・窓ガラス清掃（毎月5室まで無料）</li>
+      <li>食堂・エントランス　初回美観再生ポリッシャーがけ　無料</li>
+      <li>施工写真報告書　無料提出</li>
+      <li>緊急時の一次対応　月1回まで駆けつけ無料</li>
+    </ul>
+  </div>
+
+  <div class="section-title">追加モジュール（チェックして月額に追加）</div>
+
+  <div class="group-label">月額追加オプション</div>
+
+  <label class="module" data-monthly="30000">
+    <input type="checkbox" data-monthly="30000">
+    <div class="body">
+      <div class="title-row">
+        <span class="name">共用部床面　定期機械洗浄</span>
+        <span class="price">+30,000円<small> ／月</small></span>
+      </div>
+      <div class="desc">食堂・エントランス・共用廊下　ポリッシャー・高圧洗浄　年3回（4ヶ月毎）実施分を月割。＋下のバスルームと合わせて選択で「スタンダードプラン」相当（4大特典付き）になります。</div>
+    </div>
+  </label>
+
+  <label class="module" data-monthly="25000">
+    <input type="checkbox" data-monthly="25000">
+    <div class="body">
+      <div class="title-row">
+        <span class="name">客室バスルーム　カビ・ぬめり定期除去</span>
+        <span class="price">+25,000円<small> ／月</small></span>
+      </div>
+      <div class="desc">浴室床・壁面のカビ・ぬめり除去洗浄　月5室まで（エアコン洗浄での入室時に合わせて施工）。＋上の機械洗浄と合わせて選択で「スタンダードプラン」相当（4大特典付き）になります。</div>
+    </div>
+  </label>
+
+  <label class="module" data-monthly="18000">
+    <input type="checkbox" data-monthly="18000">
+    <div class="body">
+      <div class="title-row">
+        <span class="name">プール定期清掃</span>
+        <span class="price">+18,000円<small> ／月</small></span>
+      </div>
+      <div class="desc">月1回　プール水面・壁面・底面の藻・汚れ除去、プールサイド床面洗浄、水質目視確認・報告。＋サウナと合わせて選択で「フルパッケージ」相当になります。</div>
+    </div>
+  </label>
+
+  <label class="module" data-monthly="13000">
+    <input type="checkbox" data-monthly="13000">
+    <div class="body">
+      <div class="title-row">
+        <span class="name">サウナ・スパ定期清掃・消毒</span>
+        <span class="price">+13,000円<small> ／月</small></span>
+      </div>
+      <div class="desc">月2回　サウナ室内・マット除菌消毒洗浄、スパ床面・壁面・排水口清掃、虫侵入対策（忌避処理）。＋プールと合わせて選択で「フルパッケージ」相当になります。</div>
+    </div>
+  </label>
+
+  <div class="group-label">年1〜2回オプション（年間費用として加算）</div>
+
+  <label class="module" data-yearly="90000">
+    <input type="checkbox" data-yearly="90000">
+    <div class="body">
+      <div class="title-row">
+        <span class="name">除草・敷地内清掃</span>
+        <span class="price">+45,000円<small> ／回（年2回）</small></span>
+      </div>
+      <div class="desc">年2回（春・秋）　敷地周囲・駐車場周辺の刈取・回収・清掃</div>
+    </div>
+  </label>
+
+  <label class="module" data-yearly="65000">
+    <input type="checkbox" data-yearly="65000">
+    <div class="body">
+      <div class="title-row">
+        <span class="name">ホテル裏　産業廃棄物処分</span>
+        <span class="price">+65,000円<small> ／回（年1回）</small></span>
+      </div>
+      <div class="desc">年1回　不用物・廃棄物の収集・運搬・適正処分。産業廃棄物管理票（マニフェスト）発行</div>
+    </div>
+  </label>
+
+  <div class="group-label">厨房・季節メンテナンス　追加オプション（年間費用として加算）</div>
+
+  <label class="module" data-yearly="76800">
+    <input type="checkbox" data-yearly="76800">
+    <div class="body">
+      <div class="title-row">
+        <span class="name">厨房グリストラップ　洗剤洗浄</span>
+        <span class="price">+12,800円<small> ／回（2か月に1回・年6回）</small></span>
+      </div>
+      <div class="desc">油脂分解洗剤による定期洗浄</div>
+    </div>
+  </label>
+
+  <label class="module" data-yearly="120000">
+    <input type="checkbox" data-yearly="120000">
+    <div class="body">
+      <div class="title-row">
+        <span class="name">厨房グリストラップ　機械洗浄</span>
+        <span class="price">+30,000円<small> ／回（3か月に1回・年4回）</small></span>
+      </div>
+      <div class="desc">高圧機械洗浄による徹底清掃</div>
+    </div>
+  </label>
+
+  <label class="module" data-yearly="56000">
+    <input type="checkbox" data-yearly="56000">
+    <div class="body">
+      <div class="title-row">
+        <span class="name">厨房側溝洗浄（汚染部位）</span>
+        <span class="price">+14,000円<small> ／回（3か月に1回・年4回）</small></span>
+      </div>
+      <div class="desc">油汚れ・スケールの蓄積が著しい箇所の洗浄</div>
+    </div>
+  </label>
+
+  <label class="module" data-yearly="80000">
+    <input type="checkbox" data-yearly="80000">
+    <div class="body">
+      <div class="title-row">
+        <span class="name">年末特別清掃</span>
+        <span class="price">+80,000円<small> ／回（年1回）</small></span>
+      </div>
+      <div class="desc">繁忙期前に窓・照明・水回りを中心とした館内集中クリーニングを実施</div>
+    </div>
+  </label>
+
+  <div class="group-label">客室まわり　追加オプション（客室数に応じて自動計算）</div>
+
+  <div class="room-count-box">
+    <label for="roomCount">客室数</label>
+    <input type="number" id="roomCount" value="120" min="0" step="1">
+    <span class="hint">下記の項目は「客室数 × 単価」で年間費用を計算します（既定値：壁掛けエアコン台数120室）</span>
+  </div>
+
+  <label class="module" data-perroom="2000">
+    <input type="checkbox" data-perroom="2000">
+    <div class="body">
+      <div class="title-row">
+        <span class="name">客室内　消臭・抗菌コーティング</span>
+        <span class="price">+2,000円<small> ／室・回（年1回）</small></span>
+      </div>
+      <div class="desc">タバコ臭・ペット臭対策。クチコミの「匂い」関連クレームを予防（年2回ご希望の場合は別途ご相談）。使用薬剤は美ら技研「美らちゅら超除菌消臭」。YouTube「令和の虎」スピンオフ番組『通販の虎』出演で話題沸騰し、SNSでも大バズリ中の高評価除菌消臭剤を採用しています。</div>
+    </div>
+  </label>
+
+  <label class="module" data-perroom="3000">
+    <input type="checkbox" data-perroom="3000">
+    <div class="body">
+      <div class="title-row">
+        <span class="name">換気扇・給排気口フィルター清掃</span>
+        <span class="price">+3,000円<small> ／室・回（年1回）</small></span>
+      </div>
+      <div class="desc">客室・浴室の換気扇内部清掃</div>
+    </div>
+  </label>
+
+  <label class="module" data-perroom="10000">
+    <input type="checkbox" data-perroom="10000">
+    <div class="body">
+      <div class="title-row">
+        <span class="name">客室ディープクリーニング（繁忙期前）</span>
+        <span class="price">+10,000円<small> ／室・回（年1回）</small></span>
+      </div>
+      <div class="desc">エアコン以外の客室全体を集中施工</div>
+    </div>
+  </label>
+
+  <div class="note">
+    【作業条件・備考】<br>
+    ・損害賠償保険：施工中の事故・破損に備え、施設賠償責任保険（賠償限度額1億円）に加入しております。<br>
+    ・産業廃棄物はマニフェスト（管理票）を発行し、法令に基づく適正処理を行います。<br>
+    ・本シミュレーターは現地調査（実施済み）に基づく概算です。ただし全客室の確認には至っていないため、未確認箇所について実際の状態が異なる場合は、正式契約前に金額・仕様の調整についてご相談させていただきます。<br>
+    ・エアコン台数・床面積は現地調査および公開情報をもとに算出しております。実測値により変動が生じる場合があります。<br>
+    ・お掃除機能付きエアコンが含まれる場合は、追加料金（単価20,400円／台）にてご対応いたします。<br>
+    ・お支払い：月末締め翌月末払い。
+  </div>
+
+  <div class="footer-co">
+    株式会社えこぷろ　代表取締役　高橋 龍二　／　TEL：092-517-8785・080-7402-1161　／　info@ecopro092.com<br>
+    インボイス登録番号：T3290001110543
+  </div>
+</div>
+
+<div class="summary">
+  <div class="summary-inner">
+    <div>
+      <div class="plan-name" id="planName">ライトプラン</div>
+      <div class="label">月額合計（税抜）</div>
+      <div class="amount" id="monthlyTotal">145,500<small>円／月</small></div>
+      <div class="annual" id="annualTotal">年間（月額×12）：1,746,000円（税抜）</div>
+      <div class="onetime" id="onetimeTotal" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const BASE_MONTHLY = 145500;
+  const monthlyCheckboxes = document.querySelectorAll('input[type="checkbox"][data-monthly]');
+  const yearlyCheckboxes = document.querySelectorAll('input[type="checkbox"][data-yearly]');
+  const perRoomCheckboxes = document.querySelectorAll('input[type="checkbox"][data-perroom]');
+  const roomCountInput = document.getElementById('roomCount');
+
+  const planName = document.getElementById('planName');
+  const monthlyTotalEl = document.getElementById('monthlyTotal');
+  const annualTotalEl = document.getElementById('annualTotal');
+  const onetimeTotalEl = document.getElementById('onetimeTotal');
+  const benefitBox = document.getElementById('benefitBox');
+  const benefitStatus = document.getElementById('benefitStatus');
+
+  // スタンダードプランを構成する2モジュール／フルパッケージを構成する4モジュールの月額値
+  const STANDARD_EXTRA = [30000, 25000];
+  const FULL_EXTRA = [30000, 25000, 18000, 13000];
+
+  function fmt(n) {
+    return n.toLocaleString('ja-JP');
+  }
+
+  function update() {
+    let monthlyExtra = 0;
+    let checkedMonthlyValues = [];
+    monthlyCheckboxes.forEach(cb => {
+      const card = cb.closest('.module');
+      if (cb.checked) {
+        card.classList.add('checked');
+        const v = Number(cb.dataset.monthly);
+        monthlyExtra += v;
+        checkedMonthlyValues.push(v);
+      } else {
+        card.classList.remove('checked');
+      }
+    });
+
+    let yearlyExtra = 0;
+    yearlyCheckboxes.forEach(cb => {
+      const card = cb.closest('.module');
+      if (cb.checked) {
+        card.classList.add('checked');
+        yearlyExtra += Number(cb.dataset.yearly);
+      } else {
+        card.classList.remove('checked');
+      }
+    });
+
+    const roomCount = Math.max(0, Number(roomCountInput.value) || 0);
+    perRoomCheckboxes.forEach(cb => {
+      const card = cb.closest('.module');
+      if (cb.checked) {
+        card.classList.add('checked');
+        yearlyExtra += Number(cb.dataset.perroom) * roomCount;
+      } else {
+        card.classList.remove('checked');
+      }
+    });
+
+    const monthlyTotal = BASE_MONTHLY + monthlyExtra;
+    monthlyTotalEl.innerHTML = fmt(monthlyTotal) + '<small>円／月</small>';
+    annualTotalEl.textContent = '年間（月額×12）：' + fmt(monthlyTotal * 12) + '円（税抜）';
+
+    if (yearlyExtra > 0) {
+      onetimeTotalEl.style.display = 'block';
+      onetimeTotalEl.textContent = '年1〜2回オプション合計：年間 +' + fmt(yearlyExtra) + '円（税抜・別途）';
+    } else {
+      onetimeTotalEl.style.display = 'none';
+    }
+
+    // プラン名判定（年1〜2回オプションや客室まわりオプションはどのプランにも追加可能なため、
+    // プラン階層の判定は「月額追加オプション」4種の選択状況のみで行う）
+    const sortedChecked = checkedMonthlyValues.slice().sort((a,b)=>a-b);
+    const sortedStandard = STANDARD_EXTRA.slice().sort((a,b)=>a-b);
+    const sortedFull = FULL_EXTRA.slice().sort((a,b)=>a-b);
+    const isStandardExact =
+      sortedChecked.length === sortedStandard.length &&
+      sortedChecked.every((v,i) => v === sortedStandard[i]);
+    const isFullExact =
+      sortedChecked.length === sortedFull.length &&
+      sortedChecked.every((v,i) => v === sortedFull[i]);
+    const hasBenefits = STANDARD_EXTRA.every(v => checkedMonthlyValues.includes(v));
+
+    if (monthlyExtra === 0) {
+      planName.textContent = 'ライトプラン';
+    } else if (isFullExact) {
+      planName.textContent = 'フルパッケージ';
+    } else if (isStandardExact) {
+      planName.textContent = 'スタンダードプラン';
+    } else {
+      planName.textContent = 'カスタムプラン';
+    }
+
+    // 4大無料特典の適用判定（共用部機械洗浄＋浴室カビ除去の両方を選択でスタンダード相当となり適用）
+    if (hasBenefits) {
+      benefitBox.classList.add('active');
+      benefitStatus.textContent = '✓ スタンダードプラン相当が適用中：以下の特典が無料になります';
+    } else {
+      benefitBox.classList.remove('active');
+      benefitStatus.textContent = '下記「共用部床面　定期機械洗浄」「客室バスルーム　カビ・ぬめり定期除去」を選択するとスタンダードプラン相当となり、以下が無料になります';
+    }
+  }
+
+  document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', update);
+  });
+  roomCountInput.addEventListener('input', update);
+  // モジュールカード全体クリックでチェック切替（labelなのでデフォルトで動作するが、二重発火防止のため明示制御は不要）
+
+  update();
+</script>
+
+</body>
+</html>
